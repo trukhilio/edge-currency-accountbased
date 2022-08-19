@@ -16,18 +16,18 @@ import { makeRopstenPlugin } from './info/ropstenInfo.js'
 import { makeRskPlugin } from './info/rskInfo.js'
 
 export const ethPlugins = {
+  avalanche: makeAvalanchePlugin,
   binancesmartchain: makeBinanceSmartChainPlugin,
+  celo: makeCeloPlugin,
   ethereum: makeEthereumPlugin,
   ethereumclassic: makeEthereumClassicPlugin,
   ethDev: makeEthDevPlugin,
   fantom: makeFantomPlugin,
   goerli: makeGoerliPlugin,
   kovan: makeKovanPlugin,
-  rinkeby: makeRinkebyPlugin,
-  ropsten: makeRopstenPlugin,
-  rsk: makeRskPlugin,
   mumbai: makeMumbaiPlugin,
   polygon: makePolygonPlugin,
-  celo: makeCeloPlugin,
-  avalanche: makeAvalanchePlugin
+  rinkeby: makeRinkebyPlugin,
+  ropsten: makeRopstenPlugin,
+  rsk: makeRskPlugin
 }
