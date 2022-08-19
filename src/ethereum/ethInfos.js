@@ -10,6 +10,7 @@ import { makeFantomPlugin } from './info/ftmInfo.js'
 import { makeGoerliPlugin } from './info/goerliInfo.js'
 import { makeKovanPlugin } from './info/kovanInfo.js'
 import { makePolygonPlugin } from './info/maticInfo'
+import { makeMumbaiPlugin } from './info/mumbaiInfo'
 import { makeRinkebyPlugin } from './info/rinkebyInfo.js'
 import { makeRopstenPlugin } from './info/ropstenInfo.js'
 import { makeRskPlugin } from './info/rskInfo.js'
@@ -25,6 +26,7 @@ export const ethPlugins = {
   rinkeby: makeRinkebyPlugin,
   ropsten: makeRopstenPlugin,
   rsk: makeRskPlugin,
+  mumbai: makeMumbaiPlugin,
   polygon: makePolygonPlugin,
   celo: makeCeloPlugin,
   avalanche: makeAvalanchePlugin
