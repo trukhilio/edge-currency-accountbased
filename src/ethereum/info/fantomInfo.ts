@@ -271,7 +271,7 @@ const defaultNetworkFees: EthereumFees = {
 }
 
 // Exported for fee provider test
-export const networkInfo: EthereumNetworkInfo = {
+const networkInfo: EthereumNetworkInfo = {
   networkAdapterConfigs: [
     {
       type: 'rpc',
@@ -345,3 +345,7 @@ export const fantom = makeOuterPlugin<EthereumNetworkInfo, EthereumTools>({
     return await import('../EthereumTools')
   }
 })
+
+if (process.env.npm_lifecycle_event === 'test') {
+  module.exports = { ...module.exports, networkInfo }
+}
