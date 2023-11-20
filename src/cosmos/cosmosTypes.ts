@@ -1,3 +1,4 @@
+import { Chain } from '@chain-registry/types'
 import { EncodeObject, Registry } from '@cosmjs/proto-signing'
 import { Coin, HttpEndpoint, StargateClient } from '@cosmjs/stargate'
 import {
@@ -41,9 +42,11 @@ export interface UpgradedRegistry {
 }
 
 export interface CosmosNetworkInfo {
-  bech32AddressPrefix: string
-  bip39Path: string
-  chainId: string
+  chainData: {
+    data: Chain
+    name: string
+    url: string
+  }
   defaultTransactionFee?: Coin // Charged by the network but not included in transaction body
   nativeDenom: string
   pluginMnemonicKeyName: string

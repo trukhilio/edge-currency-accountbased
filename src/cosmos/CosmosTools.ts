@@ -1,3 +1,5 @@
+import { ChainRegistryFetcher } from '@chain-registry/client'
+import { Chain } from '@chain-registry/types'
 import { stringToPath } from '@cosmjs/crypto'
 import { fromBech32 } from '@cosmjs/encoding'
 import { DirectSecp256k1HdWallet, Registry } from '@cosmjs/proto-signing'
@@ -39,6 +41,7 @@ export class CosmosTools implements EdgeCurrencyTools {
   methods: CosmosMethods
   registry: Registry
   initOptions: JsonObject
+  chainData: Chain
 
   constructor(env: PluginEnvironment<CosmosNetworkInfo>) {
     const { builtinTokens, currencyInfo, initOptions, io, networkInfo } = env
@@ -53,11 +56,22 @@ export class CosmosTools implements EdgeCurrencyTools {
     )
     this.methods = methods
     this.registry = registry
+    const { data, name, url } = this.networkInfo.chainData
+    this.chainData = data
+    const chainUpdater = new ChainRegistryFetcher()
+    chainUpdater
+      .fetch(url)
+      .then(() => {
+        this.chainData = chainUpdater.getChain(name)
+      })
+      .catch(e => {
+        // failure is ok
+      })
   }
 
   async createSigner(mnemonic: string): Promise<DirectSecp256k1HdWallet> {
-    const { bech32AddressPrefix, bip39Path } = this.networkInfo
-    const path = stringToPath(bip39Path)
+    const { bech32_prefix: bech32AddressPrefix, slip44 } = this.chainData
+    const path = stringToPath(`m/44'/${slip44}'/0'/0/0`)
     const signer = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
       hdPaths: [path],
       prefix: bech32AddressPrefix
@@ -118,7 +132,7 @@ export class CosmosTools implements EdgeCurrencyTools {
   isValidAddress(address: string): boolean {
     try {
       const pubkey = fromBech32(address)
-      if (pubkey.prefix === this.networkInfo.bech32AddressPrefix) {
+      if (pubkey.prefix === this.chainData.bech32_prefix) {
         return true
       }
     } catch (e) {}
