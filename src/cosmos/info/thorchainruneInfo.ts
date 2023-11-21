@@ -21,6 +21,10 @@ const networkInfo: CosmosNetworkInfo = {
   rpcNode: {
     url: 'https://rpc-v1.ninerealms.com',
     headers: { 'x-client-id': '{{ninerealmsClientId}}' }
+  },
+  archiveNode: {
+    url: 'https://rpc.ninerealms.com',
+    headers: { 'x-client-id': '{{ninerealmsClientId}}' }
   }
 }
 

@@ -7,10 +7,11 @@ import {
   encodePubkey,
   makeAuthInfoBytes
 } from '@cosmjs/proto-signing'
-import { Coin, coin, parseCoins } from '@cosmjs/stargate'
+import { Coin, coin, parseCoins, StargateClient } from '@cosmjs/stargate'
 import { parseRawLog } from '@cosmjs/stargate/build/logs'
 import {
   fromRfc3339WithNanoseconds,
+  TendermintClient,
   toSeconds,
   TxResponse
 } from '@cosmjs/tendermint-rpc'
@@ -20,6 +21,7 @@ import { SignDoc, TxBody, TxRaw } from 'cosmjs-types/cosmos/tx/v1beta1/tx'
 import {
   EdgeCurrencyEngine,
   EdgeCurrencyEngineOptions,
+  EdgeFetchFunction,
   EdgeFreshAddress,
   EdgeMemo,
   EdgeSpendInfo,
@@ -53,16 +55,18 @@ import {
   TransferEvent,
   txQueryStrings
 } from './cosmosTypes'
-import { safeAddCoins } from './cosmosUtils'
+import { createStargateClient, safeAddCoins } from './cosmosUtils'
 
 const ACCOUNT_POLL_MILLISECONDS = 5000
 const TRANSACTION_POLL_MILLISECONDS = 3000
+const TWO_WEEKS = 1000 * 60 * 60 * 24 * 14
 
 export class CosmosEngine extends CurrencyEngine<
   CosmosTools,
   SafeCosmosWalletInfo
 > {
   networkInfo: CosmosNetworkInfo
+  fetchCors: EdgeFetchFunction
   accountNumber: number
   sequence: number
   otherData!: CosmosWalletOtherData
@@ -77,6 +81,7 @@ export class CosmosEngine extends CurrencyEngine<
   ) {
     super(env, tools, walletInfo, opts)
     this.networkInfo = env.networkInfo
+    this.fetchCors = env.io.fetchCors
     this.accountNumber = 0
     this.sequence = 0
     this.feeCache = new Map()
@@ -192,8 +197,22 @@ export class CosmosEngine extends CurrencyEngine<
 
   async queryTransactions(): Promise<void> {
     let progress = 0
+    const { stargateClient, tendermintClient } =
+      Date.now() - TWO_WEEKS > this.otherData.archivedTxLastCheckTime
+        ? // Uses archive rpc for first sync and then only if it's been two weeks between syncs.
+          await createStargateClient(
+            this.fetchCors,
+            this.networkInfo.archiveNode
+          )
+        : // Otherwise, uses regular rpc
+          this.getClients()
+
     for (const query of txQueryStrings) {
-      const newestTxid = await this.queryTransactionsInner(query)
+      const newestTxid = await this.queryTransactionsInner(
+        query,
+        stargateClient,
+        tendermintClient
+      )
       if (newestTxid != null && this.otherData[query] !== newestTxid) {
         this.otherData[query] = newestTxid
         this.walletLocalDataDirty = true
@@ -203,6 +222,7 @@ export class CosmosEngine extends CurrencyEngine<
         progress
       this.updateOnAddressesChecked()
     }
+    this.otherData.archivedTxLastCheckTime = Date.now()
 
     if (this.transactionsChangedArray.length > 0) {
       this.currencyEngineCallbacks.onTransactionsChanged(
@@ -213,10 +233,10 @@ export class CosmosEngine extends CurrencyEngine<
   }
 
   async queryTransactionsInner(
-    queryString: typeof txQueryStrings[number]
+    queryString: typeof txQueryStrings[number],
+    stargateClient: StargateClient,
+    tendermintClient: TendermintClient
   ): Promise<string | undefined> {
-    const { stargateClient, tendermintClient } = this.getClients()
-
     const txSearchParams = {
       query: `${queryString}='${this.walletInfo.keys.bech32Address}'`,
       per_page: 50, // sdk default 50

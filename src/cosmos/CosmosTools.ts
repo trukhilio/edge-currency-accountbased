@@ -196,14 +196,11 @@ export class CosmosTools implements EdgeCurrencyTools {
 
   async connectClient(): Promise<void> {
     if (this.clients == null) {
-      const stargateClient = await createStargateClient(
-        this.io.fetchCors,
-        rpcWithApiKey(this.networkInfo, this.initOptions)
-      )
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      const queryClient = stargateClient['forceGetQueryClient']()
-      // eslint-disable-next-line @typescript-eslint/dot-notation
-      const tendermintClient = stargateClient['forceGetTmClient']()
+      const { queryClient, stargateClient, tendermintClient } =
+        await createStargateClient(
+          this.io.fetchCors,
+          rpcWithApiKey(this.networkInfo, this.initOptions)
+        )
 
       this.clients = {
         queryClient,
