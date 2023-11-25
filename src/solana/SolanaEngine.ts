@@ -84,8 +84,7 @@ export class SolanaEngine extends CurrencyEngine<
     this.otherData = asSolanaWalletOtherData(raw)
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async fetchRpc(method: string, params: any = []) {
+  async fetchRpc(method: string, params: any = []): Promise<any> {
     const body = {
       jsonrpc: '2.0',
       id: 1,
@@ -115,8 +114,7 @@ export class SolanaEngine extends CurrencyEngine<
     return response.result
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async queryBalance() {
+  async queryBalance(): Promise<void> {
     try {
       const response = await this.fetchRpc('getBalance', [
         this.base58PublicKey,
@@ -130,8 +128,7 @@ export class SolanaEngine extends CurrencyEngine<
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async queryBlockheight() {
+  async queryBlockheight(): Promise<void> {
     try {
       const blockheight = asNumber(await this.fetchRpc('getSlot'))
       if (blockheight > this.walletLocalData.blockHeight) {
@@ -146,8 +143,7 @@ export class SolanaEngine extends CurrencyEngine<
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async queryFee() {
+  async queryFee(): Promise<void> {
     try {
       const response = await this.fetchRpc('getRecentBlockhash')
       const {
@@ -161,8 +157,7 @@ export class SolanaEngine extends CurrencyEngine<
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  processSolanaTransaction(tx: RpcGetTransaction, timestamp: number) {
+  processSolanaTransaction(tx: RpcGetTransaction, timestamp: number): void {
     const ourReceiveAddresses = []
     const index = tx.transaction.message.accountKeys.findIndex(
       account => account === this.base58PublicKey
@@ -193,8 +188,7 @@ export class SolanaEngine extends CurrencyEngine<
     this.addTransaction(this.chainCode, edgeTransaction)
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async queryTransactions() {
+  async queryTransactions(): Promise<void> {
     let before = null
     const until =
       this.otherData.newestTxid !== '' ? this.otherData.newestTxid : null
@@ -202,8 +196,7 @@ export class SolanaEngine extends CurrencyEngine<
     let txids = []
     try {
       // Gather all transaction IDs since we last updated
-      // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-      while (1) {
+      while (true) {
         const params = [
           this.base58PublicKey,
           {
@@ -295,19 +288,17 @@ export class SolanaEngine extends CurrencyEngine<
   // // Public methods
   // // ****************************************************************************
 
-  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  async startEngine() {
+  async startEngine(): Promise<void> {
     this.engineOn = true
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.addToLoop('queryBlockheight', BLOCKCHAIN_POLL_MILLISECONDS)
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.addToLoop('queryFee', BLOCKCHAIN_POLL_MILLISECONDS)
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.addToLoop('queryBalance', ACCOUNT_POLL_MILLISECONDS)
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.addToLoop('queryTransactions', TRANSACTION_POLL_MILLISECONDS)
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    super.startEngine()
+    this.addToLoop('queryBlockheight', BLOCKCHAIN_POLL_MILLISECONDS).catch(
+      () => {}
+    )
+    this.addToLoop('queryFee', BLOCKCHAIN_POLL_MILLISECONDS).catch(() => {})
+    this.addToLoop('queryBalance', ACCOUNT_POLL_MILLISECONDS).catch(() => {})
+    this.addToLoop('queryTransactions', TRANSACTION_POLL_MILLISECONDS).catch(
+      () => {}
+    )
+    await super.startEngine()
   }
 
   async resyncBlockchain(): Promise<void> {
