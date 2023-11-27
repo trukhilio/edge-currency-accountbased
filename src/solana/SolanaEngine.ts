@@ -26,17 +26,21 @@ import {
 } from '../common/utils'
 import { SolanaTools } from './SolanaTools'
 import {
+  AccountBalance,
+  asAccountBalance,
   asRecentBlockHash,
-  asRpcBalance,
   asRpcGetTransaction,
   asSafeSolanaWalletInfo,
   asSolanaPrivateKeys,
   asSolanaWalletOtherData,
+  asTokenBalance,
   RpcGetTransaction,
+  RpcRequest,
   RpcSignatureForAddress,
   SafeSolanaWalletInfo,
   SolanaNetworkInfo,
-  SolanaWalletOtherData
+  SolanaWalletOtherData,
+  TokenBalance
 } from './solanaTypes'
 
 const {
@@ -85,19 +89,24 @@ export class SolanaEngine extends CurrencyEngine<
   }
 
   async fetchRpc(method: string, params: any = []): Promise<any> {
-    const body = {
-      jsonrpc: '2.0',
-      id: 1,
+    const req = {
       method,
       params
     }
+    const res = await this.fetchRpcBulk([req])
+    return res[0].result
+  }
+
+  async fetchRpcBulk(requests: RpcRequest[]): Promise<any[]> {
     const options = {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(
+        requests.map(req => ({ jsonrpc: '2.0', id: 1, ...req }))
+      )
     }
 
     const funcs = this.networkInfo.rpcNodes.map(serverUrl => async () => {
@@ -110,18 +119,50 @@ export class SolanaEngine extends CurrencyEngine<
       return await res.json()
     })
 
-    const response = await asyncWaterfall(funcs)
-    return response.result
+    return await asyncWaterfall(funcs)
   }
 
   async queryBalance(): Promise<void> {
     try {
-      const response = await this.fetchRpc('getBalance', [
-        this.base58PublicKey,
-        { commitment: this.networkInfo.commitment }
-      ])
-      const balance = asRpcBalance(response)
-      this.updateBalance(this.chainCode, balance.value.toString())
+      const requests: RpcRequest[] = [
+        {
+          method: 'getBalance',
+          params: [
+            this.base58PublicKey,
+            { commitment: this.networkInfo.commitment }
+          ]
+        }
+      ]
+
+      const allTokenIds = [...Object.keys(this.allTokensMap)]
+      for (const tokenId of allTokenIds) {
+        requests.push({
+          method: 'getTokenAccountsByOwner',
+          params: [
+            this.base58PublicKey,
+            { mint: tokenId },
+            {
+              commitment: this.networkInfo.commitment,
+              encoding: 'jsonParsed'
+            }
+          ]
+        })
+
+        const balances: any = await this.fetchRpcBulk(requests)
+
+        const [mainnetBal, ...tokenBals]: [AccountBalance, TokenBalance[]] =
+          balances
+        const balance = asAccountBalance(mainnetBal)
+        this.updateBalance(this.chainCode, balance.result.value.toString())
+
+        for (const [i, tokenId] of allTokenIds.entries()) {
+          const tokenBal = asTokenBalance(tokenBals[i])
+          const balance =
+            tokenBal.result.value[0]?.account?.data?.parsed?.info?.tokenAmount
+              ?.amount ?? '0'
+          this.updateBalance(this.allTokensMap[tokenId].currencyCode, balance)
+        }
+      }
     } catch (e: any) {
       // Nodes will return 0 for uninitiated accounts so thrown errors should be logged
       this.error(`Error checking ${this.chainCode} address balance`, e)
