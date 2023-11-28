@@ -1,8 +1,20 @@
-import { EdgeCurrencyInfo } from 'edge-core-js/types'
+import { EdgeCurrencyInfo, EdgeTokenMap } from 'edge-core-js/types'
 
 import { makeOuterPlugin } from '../common/innerPlugin'
+import { makeMetaTokens } from '../common/tokenHelpers'
 import type { SolanaTools } from './SolanaTools'
 import type { SolanaNetworkInfo } from './solanaTypes'
+
+const builtinTokens: EdgeTokenMap = {
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v: {
+    currencyCode: 'USDC',
+    displayName: 'USD Coin',
+    denominations: [{ name: 'USDC', multiplier: '1000000' }],
+    networkLocation: {
+      contractAddress: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+    }
+  }
+}
 
 const networkInfo: SolanaNetworkInfo = {
   rpcNodes: [
@@ -42,12 +54,13 @@ export const currencyInfo: EdgeCurrencyInfo = {
   // Deprecated:
   defaultSettings: {},
   memoType: 'text',
-  metaTokens: []
+  metaTokens: makeMetaTokens(builtinTokens)
 }
 
 export const solana = makeOuterPlugin<SolanaNetworkInfo, SolanaTools>({
   currencyInfo,
   networkInfo,
+  builtinTokens,
 
   checkEnvironment: () => {
     if (global.BigInt == null) {

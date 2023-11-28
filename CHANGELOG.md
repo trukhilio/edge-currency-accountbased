@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- added: (Solana) Add SPL token support
+
 ## 2.14.0 (2023-11-24)
 
 - added: Add Pokt RPCs as option for Fantom and Polygon
