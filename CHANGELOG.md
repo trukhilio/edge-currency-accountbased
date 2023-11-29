@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- added: Notify core of new detected token balances
+
 ## 2.14.0 (2023-11-24)
 
 - added: Add Pokt RPCs as option for Fantom and Polygon
