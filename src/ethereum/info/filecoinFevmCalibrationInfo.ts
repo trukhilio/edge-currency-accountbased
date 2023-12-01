@@ -51,10 +51,6 @@ const networkInfo: EthereumNetworkInfo = {
     {
       type: 'rpc',
       servers: ['https://api.calibration.node.glif.io/rpc/v0']
-    },
-    {
-      type: 'filfox',
-      servers: ['https://calibration.filfox.info/api/v1']
     }
   ],
   uriNetworks: ['filecoin'],

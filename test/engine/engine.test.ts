@@ -79,6 +79,9 @@ for (const fixture of fixtures) {
     },
     onWcNewContractCall(payload) {
       emitter.emit('wcNewContractCall', payload)
+    },
+    onNewTokens() {
+      console.log('onNewTokens')
     }
   }
 
@@ -265,6 +268,9 @@ const callbacks: EdgeCurrencyEngineCallbacks = {
   },
   onWcNewContractCall(payload) {
     emitter.emit('wcNewContractCall', payload)
+  },
+  onNewTokens() {
+    console.log('onNewTokens')
   }
 }
 
