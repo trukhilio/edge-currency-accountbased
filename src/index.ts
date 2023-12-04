@@ -2,11 +2,9 @@ import 'regenerator-runtime/runtime'
 
 import type { EdgeCorePlugins } from 'edge-core-js/types'
 
-import { ethereumPlugins } from './ethereum/ethereumInfos'
 import { fio } from './fio/fioInfo'
 
 const plugins = {
-  ...ethereumPlugins,
   fio
 }
 
