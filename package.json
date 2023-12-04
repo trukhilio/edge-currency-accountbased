@@ -38,8 +38,6 @@
     "cli": "node -r sucrase/register cli/cli.ts",
     "fix": "eslint . --fix",
     "lint": "eslint .",
-    "make-checkpoints": "node -r sucrase/register scripts/makeCheckpoints.ts",
-    "make-cosmos-protos": "node -r sucrase/register ./scripts/cosmos-ts-protos/generate-ts-protos.ts",
     "node": "sucrase -d ./lib -q -t imports,typescript ./src",
     "precommit": "lint-staged && npm-run-all types test",
     "prepare": "husky install && patch-package && npm-run-all clean node types webpack",
