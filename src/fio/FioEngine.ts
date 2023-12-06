@@ -12,7 +12,7 @@ import { asMaybe } from 'cleaners'
 import {
   EdgeCurrencyEngine,
   EdgeCurrencyEngineOptions,
-  EdgeEnginePrivateKeyOptions,
+  // EdgeEnginePrivateKeyOptions,
   EdgeFetchFunction,
   EdgeFreshAddress,
   EdgeSpendInfo,
@@ -110,7 +110,7 @@ const PROCESS_TX_NAME_LIST = [
   ACTIONS_TO_TX_ACTION_NAME[ACTIONS.unStakeFioTokens],
   'regaddress'
 ]
-const SYNC_NETWORK_INTERVAL = 10000
+// const SYNC_NETWORK_INTERVAL = 10000
 
 interface PreparedTrx {
   signatures: string[]
@@ -1284,59 +1284,59 @@ export class FioEngine extends CurrencyEngine<FioTools, SafeFioWalletInfo> {
   }
 
   // Placeholder function for network activity that requires private keys
-  async syncNetwork(opts: EdgeEnginePrivateKeyOptions): Promise<number> {
-    const fioPrivateKeys = asFioPrivateKeys(opts?.privateKeys)
-    let isChanged = false
+  // async syncNetwork(opts: EdgeEnginePrivateKeyOptions): Promise<number> {
+  //   const fioPrivateKeys = asFioPrivateKeys(opts?.privateKeys)
+  //   let isChanged = false
 
-    const checkFioRequests = async (
-      type: FioRequestTypes,
-      decoder: Query<PendingFioRequests | SentFioRequests>
-    ): Promise<void> => {
-      const encryptedReqs = await this.fetchEncryptedFioRequests(type, decoder)
-      decoder.privateKey = fioPrivateKeys.fioKey
-      decoder.publicKey = this.walletInfo.keys.publicKey
-      const decryptedReqs: { requests: FioRequest[] } = decoder.decrypt({
-        requests: encryptedReqs
-      }) ?? { requests: [] }
+  //   const checkFioRequests = async (
+  //     type: FioRequestTypes,
+  //     decoder: Query<PendingFioRequests | SentFioRequests>
+  //   ): Promise<void> => {
+  //     const encryptedReqs = await this.fetchEncryptedFioRequests(type, decoder)
+  //     decoder.privateKey = fioPrivateKeys.fioKey
+  //     decoder.publicKey = this.walletInfo.keys.publicKey
+  //     const decryptedReqs: { requests: FioRequest[] } = decoder.decrypt({
+  //       requests: encryptedReqs
+  //     }) ?? { requests: [] }
 
-      if (
-        this.fioRequestsListChanged(
-          this.otherData.fioRequests[type],
-          decryptedReqs.requests
-        )
-      ) {
-        this.otherData.fioRequests[type] = [...decryptedReqs.requests]
-        isChanged = true
-      }
-    }
+  //     if (
+  //       this.fioRequestsListChanged(
+  //         this.otherData.fioRequests[type],
+  //         decryptedReqs.requests
+  //       )
+  //     ) {
+  //       this.otherData.fioRequests[type] = [...decryptedReqs.requests]
+  //       isChanged = true
+  //     }
+  //   }
 
-    await checkFioRequests(
-      'PENDING',
-      new PendingFioRequests(this.walletInfo.keys.publicKey)
-    )
-    await checkFioRequests(
-      'SENT',
-      new SentFioRequests(this.walletInfo.keys.publicKey)
-    )
+  //   await checkFioRequests(
+  //     'PENDING',
+  //     new PendingFioRequests(this.walletInfo.keys.publicKey)
+  //   )
+  //   await checkFioRequests(
+  //     'SENT',
+  //     new SentFioRequests(this.walletInfo.keys.publicKey)
+  //   )
 
-    if (isChanged) this.localDataDirty()
+  //   if (isChanged) this.localDataDirty()
 
-    const obtDecoder = new GetObtData(this.walletInfo.keys.publicKey)
-    const encryptedObtData = await this.fetchEncryptedObtData(
-      'getObtData',
-      obtDecoder
-    )
-    obtDecoder.privateKey = fioPrivateKeys.fioKey
-    obtDecoder.publicKey = this.walletInfo.keys.publicKey
-    const decryptedObtData: { obt_data_records: ObtData[] } =
-      obtDecoder.decrypt({
-        obt_data_records: encryptedObtData
-      }) ?? { obt_data_records: [] }
+  //   const obtDecoder = new GetObtData(this.walletInfo.keys.publicKey)
+  //   const encryptedObtData = await this.fetchEncryptedObtData(
+  //     'getObtData',
+  //     obtDecoder
+  //   )
+  //   obtDecoder.privateKey = fioPrivateKeys.fioKey
+  //   obtDecoder.publicKey = this.walletInfo.keys.publicKey
+  //   const decryptedObtData: { obt_data_records: ObtData[] } =
+  //     obtDecoder.decrypt({
+  //       obt_data_records: encryptedObtData
+  //     }) ?? { obt_data_records: [] }
 
-    this.obtData = decryptedObtData.obt_data_records
+  //   this.obtData = decryptedObtData.obt_data_records
 
-    return SYNC_NETWORK_INTERVAL
-  }
+  //   return SYNC_NETWORK_INTERVAL
+  // }
 
   // https://developers.fioprotocol.io/docs/fio-protocol/fio-fees
   async getFee(endpoint: EndPoint, param?: string): Promise<string> {
@@ -1358,13 +1358,17 @@ export class FioEngine extends CurrencyEngine<FioTools, SafeFioWalletInfo> {
   // This routine is called once a wallet needs to start querying the network
   async startEngine(): Promise<void> {
     this.engineOn = true
-    this.addToLoop(
-      'checkBlockchainInnerLoop',
-      BLOCKCHAIN_POLL_MILLISECONDS
-    ).catch(() => {})
-    this.addToLoop('checkAccountInnerLoop', ADDRESS_POLL_MILLISECONDS).catch(
-      () => {}
-    )
+
+    if (process.env.NODE_ENV === 'test') {
+      this.addToLoop(
+        'checkBlockchainInnerLoop',
+        BLOCKCHAIN_POLL_MILLISECONDS
+      ).catch(() => {})
+      this.addToLoop('checkAccountInnerLoop', ADDRESS_POLL_MILLISECONDS).catch(
+        () => {}
+      )
+    }
+
     this.addToLoop(
       'checkTransactionsInnerLoop',
       TRANSACTION_POLL_MILLISECONDS
